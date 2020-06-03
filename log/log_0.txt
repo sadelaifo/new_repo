@@ -1,0 +1,13 @@
+memory size:        0MB
+wmax:               1000
+level:              10
+nodes:              1023
+total threads: 	1
+total groups:       10
+start_gap period:   100
+barrier period: 	10000
+1 10000
+3 20000
+4 30000
+8 40000
+10 49537

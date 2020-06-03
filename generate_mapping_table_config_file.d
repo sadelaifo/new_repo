@@ -1,0 +1,2 @@
+generate_mapping_table_config_file.o: \
+ generate_mapping_table_config_file.cpp
