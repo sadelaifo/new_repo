@@ -14,14 +14,16 @@ inline int check_group(const uint64_t la, const uint64_t nodes, const uint64_t g
 
 // check whether 
 inline uint64_t get_group_id(const uint64_t la, const uint64_t nodes, const uint64_t groups, const uint64_t separate) {
-	return (la > separate) ? (separate / (nodes / groups + 1) + (la - separate) / (nodes / groups)) : (la / (nodes / groups + 1));
+	uint64_t nodes_per_group = nodes / groups;
+	return (la > separate) ? 1 + (separate / (nodes_per_group + 1) + (la - separate - 1) / nodes_per_group) : (la / (nodes_per_group + 1));
 }
 
 inline uint64_t compute_offset_la(const uint64_t la, const uint64_t nodes, const uint64_t groups, const uint64_t separate) {
+	uint64_t nodes_per_group = nodes / groups;
 	if (la > separate) {
-		return (la - separate) % (nodes / groups);
+		return (la - separate - 1) % nodes_per_group;
 	}
-	return la / (nodes / groups + 1);
+	return la % (nodes_per_group + 1);
 }
 
 inline uint64_t compute_offset_group(const uint64_t group_id, const uint64_t groups, const uint64_t total_threads) {
@@ -55,6 +57,10 @@ inline int initialize_consumer_thread(
 	uint64_t  groups_this_thread,
 	uint64_t  total_threads,
 	uint64_t  my_id) {
+
+	uint64_t from 	= my_id * groups_this_thread;	
+	uint64_t to	= (my_id + 1) * groups_this_thread - 1;
+
 	try {
 		pa              = new uint64_t*[groups_this_thread];
 		start           = new uint64_t [groups_this_thread];
@@ -68,8 +74,9 @@ inline int initialize_consumer_thread(
 	map_table = config->map_table;
 	memset(group_counter, 0, sizeof(uint64_t) * groups_this_thread);
 	memset(start,         0, sizeof(uint64_t) * groups_this_thread);
-	for (uint64_t i = 0; i < groups_this_thread; i++) {
-		uint64_t group_id = my_id * groups_this_thread;
+
+	for (uint64_t group_id = from; group_id <= to ; group_id++) {
+		uint64_t i = group_id % groups_this_thread;
 		if (group_id < config->nodes % config->groups) {
 			group_size[i] = 1 + config->nodes / config->groups;
 		} else {
