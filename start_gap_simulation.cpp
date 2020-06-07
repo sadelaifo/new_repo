@@ -65,19 +65,22 @@ int main(int argc, char** argv) {
 
 //	return 0;
 
-	if (argc < 6) {
-		std::cout << "ERROR, enter wmax, level, groups, threads, barrier period\n";
+	if (argc < 7) {
+		std::cout << "ERROR, enter wmax, level, groups, threads, barrier period, print period\n" 
+			<< "Wmax refers to the number of writes before a memory line dies\n"
+			<< "Level refers to the size of ORAM tree\n"
+			<< "Groups refers to the number of groups you want to simulate with start gap\n"
+			<< "threads refers to the number of threads you want to use to speed up computation\n"
+			<< "Barrier period refers to the number of ORAM requests synchronized. Increasing this number will speed up computation, but will also lose precision\n"
+			<< "Print period refers to the period you want to print out status. The actual print period is computed by barrier period * print period\n";
 		return 1;
-	}	
-	uint64_t flag = 0;
-	if (argc > 6) {
-		flag = (uint64_t)atoi(argv[6]);
 	}	
 	const uint64_t wmax 		= (uint64_t)atoi(argv[1]);
 	const uint64_t level 		= (uint64_t)atoi(argv[2]);
 	const uint64_t groups 		= (uint64_t)atoi(argv[3]);
 	const uint64_t num_threads 	= (uint64_t)atoi(argv[4]);
 	const uint64_t barrier_period   = (uint64_t)atoi(argv[5]);
+	const uint64_t print_period	= (uint64_t)atoi(argv[6]);
 	const uint64_t nodes 		= ((uint64_t) 1 << level) - 1;
 	const uint64_t size 		= nodes;
 	const uint64_t memory_size 	= (nodes + groups) * z * block_size;
@@ -149,12 +152,12 @@ int main(int argc, char** argv) {
 	config.barrier_period   = barrier_period;
 	config.total_writes 	= 0;
 	config.outputFile	= &outputFile;
-	config.flag		= flag;
+	config.print_period	= print_period;
 	//	config.blocking_threads = 0;
 	config.separate		= separate;
 	config.barrier		= (pthread_barrier_t*)malloc(sizeof(pthread_barrier_t));
 	pthread_barrier_init(config.barrier, NULL, (unsigned)num_threads);
-	
+
 	//	config.time		= time;
 	// create new producer threa
 	printf("Finish initialization\n");
@@ -187,6 +190,7 @@ int main(int argc, char** argv) {
 	//	for (uint64_t i = 0; i < num_threads; i++) {
 	//		std::cout << "elapsed time for thread " << i << " is: " << config.time[i].count() << std::endl;
 	//	}
+	std::cout << "*******************************************\n";
 	std::cout << "total write is " << c << std::endl;
 	std::cout << "memory size:        " << (memory_size >> 20) << "MB" << std::endl;
 	std::cout << "level:              " << level << std::endl;
@@ -195,7 +199,7 @@ int main(int argc, char** argv) {
 	std::cout << "wmax=" << wmax << "; level=" << level << "; group=" << groups << " percent lifetime :  " << lifetime << std::endl;
 	// this line is only used for do_sg.sh to easily grep the lifetime 
 	std::cout << "pgs=" << lifetime << std::endl;
-
+	std::cout << "*******************************************\n";
 	if (outputFile.fail()) {
 		cout << "ERROR, file not found\n";
 	} else {

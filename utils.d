@@ -1,5 +1,3 @@
-utils.o: utils.cpp utils.h sha256.h
+utils.o: utils.cpp utils.h
 
 utils.h:
-
-sha256.h:

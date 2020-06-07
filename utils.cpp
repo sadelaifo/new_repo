@@ -32,7 +32,7 @@ inline uint64_t compute_offset_group(const uint64_t group_id, const uint64_t gro
 
 inline uint64_t my_random_generator(
 	std::default_random_engine& generator,
-	std::uniform_int_distribution<int>& d
+	std::uniform_int_distribution<uint64_t>& d
 	) {
 //	return counter % (to - from + 1) + from;
 //	return (uint64_t) rand() % (to - from + 1) + from;
@@ -116,12 +116,13 @@ inline int initialize_consumer_thread(
 // synchronize the calling thread with all other threads,
 // return 1 if the total number of failed nodes > 1%
 // return 0 otherwise
-inline int consumer_thread_wait(config_t* config, const uint64_t thres, uint64_t& counter, const uint64_t barrier_period, uint64_t &failed_nodes_local, uint64_t& total_writes_local, uint64_t my_id) {
-	if (counter == barrier_period) {
-		counter = 0;
+inline int consumer_thread_wait(config_t* config, const uint64_t thres, uint64_t& counter, const uint64_t barrier_period, uint64_t &failed_nodes_local, uint64_t& total_writes_local, const uint64_t my_id, const uint64_t print_period) {
+	if (counter % barrier_period == 0) {
 		config->mutex.lock();
-//		std::cout << "Thread id = " << my_id << "; Counter = " << counter << "; Total writes in this thread is " << total_writes_local << "; Failed nodes total is " << config->failed_nodes << std::endl;
-		(*config->outputFile) << "Thread id = " << my_id << "; Counter = " << counter << "; Total writes in this thread is " << total_writes_local << "; Failed nodes total is " << config->failed_nodes << std::endl;
+		if (counter % print_period == 0) {
+			std::cout << "Thread id = " << my_id << "; Counter = " << counter << "; Total writes in this thread is " << total_writes_local << "; Failed nodes total is " << config->failed_nodes << std::endl;	
+			(*config->outputFile) << "Thread id = " << my_id << "; Counter = " << counter << "; Total writes in this thread is " << total_writes_local << "; Failed nodes total is " << config->failed_nodes << std::endl;
+		}
 		config->failed_nodes += failed_nodes_local;
 		config->mutex.unlock();
 		config->thread_barrier->wait();
@@ -151,7 +152,8 @@ void consume_path_oram_requests(config_t* config, uint64_t my_id) {
 	const uint64_t level 		= config->level;
 	const uint64_t separate 	= config->separate;
 	const uint64_t total_threads 	= config->total_threads;
-	SHA256 sha256;
+	const uint64_t print_period	= config->print_period * barrier_period;
+//	SHA256 sha256;
 
 	// declare local variables
 	uint64_t la 			= 0;
@@ -161,7 +163,7 @@ void consume_path_oram_requests(config_t* config, uint64_t my_id) {
 	uint64_t failed_nodes_local 	= 0;
 	uint64_t total_writes_local 	= 0;
         uint64_t groups_this_thread 	= groups / total_threads;
-	uint64_t flag			= config->flag;
+//	uint64_t flag			= config->flag;
 	// declare local pointers
 	uint64_t **pa;
 	uint64_t *start;
@@ -189,7 +191,7 @@ void consume_path_oram_requests(config_t* config, uint64_t my_id) {
 	}
 
         std::default_random_engine generator;
-        std::uniform_int_distribution<int> d(from, to);
+        std::uniform_int_distribution<uint64_t> d(from, to);
 
 	std::chrono::duration<double> init_elapsed_time = std::chrono::system_clock::now() - init_time;
 
@@ -222,9 +224,9 @@ void consume_path_oram_requests(config_t* config, uint64_t my_id) {
 
 				(group_counter[group_id])++;
 				(pa[group_id][tmp_pa])++;
-				if (flag == 1) {
-					cout << "group_id = " << group_id << "; offset = " << tmp_pa << endl;
-				}
+//				if (flag == 1) {
+//					cout << "group_id = " << group_id << "; offset = " << tmp_pa << endl;
+//				}
 				if (pa[group_id][tmp_pa] >= wmax) {
 //					for (uint64_t j = 0; j < nodes
 					failed_nodes_local++;
@@ -240,7 +242,7 @@ void consume_path_oram_requests(config_t* config, uint64_t my_id) {
 				total_writes_local++;
 			}
 
-			if (consumer_thread_wait(config, thres, counter, barrier_period, failed_nodes_local, total_writes_local, my_id) == 1) {
+			if (consumer_thread_wait(config, thres, counter, barrier_period, failed_nodes_local, total_writes_local, my_id, print_period) == 1) {
 				cleanup(pa, start, gap, group_counter, group_size, groups_this_thread);
 				return;
 			}

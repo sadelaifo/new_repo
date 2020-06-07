@@ -17,7 +17,7 @@
 #include <pthread.h>
 #include <fstream>
 #include <random>
-#include "sha256.h"
+//#include "sha256.h"
 using namespace std;
 
 const uint64_t queue_uint64_thres = 1 << 11;
@@ -37,8 +37,9 @@ struct config_t {
         uint64_t  wmax;
         uint64_t  thres;
 	uint64_t  period;
-	uint64_t barrier_period;
-	uint64_t separate;
+	uint64_t  barrier_period;
+	uint64_t  separate;
+	uint64_t  print_period;
 //	std::chrono::duration<double>* time;
 /* shared variables */
 
@@ -60,8 +61,8 @@ int increment_memory_line(uint64_t la, config_t* config);
 inline void leaf_range(uint64_t level, uint64_t &from, uint64_t &to);
 inline int check_group(const uint64_t la, const uint64_t nodes, const uint64_t groups, const uint64_t separate, const uint64_t total_threads, const uint64_t my_id);
 inline uint64_t get_group_id(const uint64_t la, const uint64_t nodes, const uint64_t groups, const uint64_t separate);
-inline uint64_t my_random_generator(std::default_random_engine& g, std::uniform_int_distribution<int>& d);
-inline int consumer_thread_wait(config_t* config, const uint64_t thres, uint64_t& counter, const uint64_t barrier_period, uint64_t &failed_nodes_local, uint64_t& total_writes_local, uint64_t my_id);
+inline uint64_t my_random_generator(std::default_random_engine& g, std::uniform_int_distribution<uint64_t>& d);
+inline int consumer_thread_wait(config_t* config, const uint64_t thres, uint64_t& counter, const uint64_t barrier_period, uint64_t &failed_nodes_local, uint64_t& total_writes_local, const uint64_t my_id, const uint64_t print_period);
 inline uint64_t compute_offset_la(const uint64_t la, const uint64_t nodes,const uint64_t groups,const uint64_t separate);
 inline int initialize_consumer_thread(
         config_t* config,
