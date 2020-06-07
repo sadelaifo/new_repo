@@ -14,6 +14,7 @@
 #include <assert.h>     /* assert */
 #include <boost/thread/barrier.hpp>
 #include <pthread.h>
+
 using namespace std;
 static inline void swap(uint64_t* a, uint64_t* b);
 void shuffle_map_table(uint64_t* mt, const uint64_t size);
@@ -67,16 +68,20 @@ int main(int argc, char** argv) {
 	if (argc < 6) {
 		std::cout << "ERROR, enter wmax, level, groups, threads, barrier period\n";
 		return 1;
-	}
+	}	
+	uint64_t flag = 0;
+	if (argc > 6) {
+		flag = (uint64_t)atoi(argv[6]);
+	}	
 	const uint64_t wmax 		= (uint64_t)atoi(argv[1]);
 	const uint64_t level 		= (uint64_t)atoi(argv[2]);
 	const uint64_t groups 		= (uint64_t)atoi(argv[3]);
 	const uint64_t num_threads 	= (uint64_t)atoi(argv[4]);
+	const uint64_t barrier_period   = (uint64_t)atoi(argv[5]);
 	const uint64_t nodes 		= ((uint64_t) 1 << level) - 1;
 	const uint64_t size 		= nodes;
 	const uint64_t memory_size 	= (nodes + groups) * z * block_size;
 	const uint64_t thres 		= nodes / 100;
-	const uint64_t barrier_period   = (uint64_t)atoi(argv[5]);
 	const uint64_t separate		= (nodes % groups) * (nodes / groups + 1) - 1;
 	//	const uint64_t group_size 	= (uint64_t) ceil((double)nodes / (double)groups);
 	if (groups % num_threads != 0 || groups < num_threads || groups > nodes) {
@@ -130,6 +135,7 @@ int main(int argc, char** argv) {
 	//	config.thread_group_to	= thread_group_to;
 	//	config.groups_from	= groups_from;
 	//	config.groups_to	= groups_to;
+	ofstream outputFile("log/logs.txt");
 	config.thread_barrier 	= &thread_barrier;
 	config.nodes 		= nodes;
 	config.groups 		= groups;
@@ -142,10 +148,13 @@ int main(int argc, char** argv) {
 	config.failed_nodes 	= 0;
 	config.barrier_period   = barrier_period;
 	config.total_writes 	= 0;
+	config.outputFile	= &outputFile;
+	config.flag		= flag;
 	//	config.blocking_threads = 0;
 	config.separate		= separate;
 	config.barrier		= (pthread_barrier_t*)malloc(sizeof(pthread_barrier_t));
 	pthread_barrier_init(config.barrier, NULL, (unsigned)num_threads);
+	
 	//	config.time		= time;
 	// create new producer threa
 	printf("Finish initialization\n");
@@ -187,7 +196,6 @@ int main(int argc, char** argv) {
 	// this line is only used for do_sg.sh to easily grep the lifetime 
 	std::cout << "pgs=" << lifetime << std::endl;
 
-	ofstream outputFile("log/logs.txt");
 	if (outputFile.fail()) {
 		cout << "ERROR, file not found\n";
 	} else {

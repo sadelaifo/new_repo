@@ -7,6 +7,7 @@ OBJS_CONFIG += generate_mapping_table_config_file.o
 OBJS_NEW_SG += new_start_gap_simulation.o
 OBJS_SG += start_gap_simulation.o 
 OBJS_SG += utils.o
+OBJS_SG += sha256.o
 LIBS += -lm
 LIBS += -lpthread
 #LIBS += -lboost_fiber
