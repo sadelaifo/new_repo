@@ -97,7 +97,7 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 
-	if (tree_top_level <= level) {
+	if (tree_top_level >= level) {
 		std::cerr << "Error, please ensure tree top cache < memory size\n";
 		return 1;
 	}
@@ -148,8 +148,14 @@ int main(int argc, char** argv) {
 	//	config.thread_group_to	= thread_group_to;
 	//	config.groups_from	= groups_from;
 	//	config.groups_to	= groups_to;
-	std::string file_name = "logs_level_" + level + "_group_" + group + "_treeTop_" + tree_top_level + ".txt";
-	ofstream outputFile("log/logs.txt");
+	std::string file_name("logs_level_");
+	file_name += level;
+	file_name += "_group_";
+	file_name += groups;
+	file_name += "_treeTop_";
+	file_name += tree_top_level;
+	file_name += ".txt";
+	ofstream outputFile(file_name);
 	config.thread_barrier 	= &thread_barrier;
 	config.nodes 		= nodes;
 	config.groups 		= groups;
