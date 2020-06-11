@@ -148,6 +148,7 @@ int main(int argc, char** argv) {
 	//	config.thread_group_to	= thread_group_to;
 	//	config.groups_from	= groups_from;
 	//	config.groups_to	= groups_to;
+	std::string file_name = "logs_level_" + level + "_group_" + group + "_treeTop_" + tree_top_level + ".txt";
 	ofstream outputFile("log/logs.txt");
 	config.thread_barrier 	= &thread_barrier;
 	config.nodes 		= nodes;
