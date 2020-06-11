@@ -40,6 +40,8 @@ struct config_t {
 	uint64_t  barrier_period;
 	uint64_t  separate;
 	uint64_t  print_period;
+	uint64_t tree_top_level_upper;
+	uint64_t tree_top_level_lower;
 //	std::chrono::duration<double>* time;
 /* shared variables */
 
@@ -59,7 +61,7 @@ struct config_t {
 void consume_path_oram_requests(config_t* config, uint64_t id);
 int increment_memory_line(uint64_t la, config_t* config);
 inline void leaf_range(uint64_t level, uint64_t &from, uint64_t &to);
-inline int check_group(const uint64_t la, const uint64_t nodes, const uint64_t groups, const uint64_t separate, const uint64_t total_threads, const uint64_t my_id);
+inline int check_group(uint64_t& la, const uint64_t nodes, const uint64_t groups, const uint64_t separate, const uint64_t total_threads, const uint64_t my_id, uint64_t tree_top_bound_lower, uint64_t tree_top_bound_upper);
 inline uint64_t get_group_id(const uint64_t la, const uint64_t nodes, const uint64_t groups, const uint64_t separate);
 inline uint64_t my_random_generator(std::default_random_engine& g, std::uniform_int_distribution<uint64_t>& d);
 inline int consumer_thread_wait(config_t* config, const uint64_t thres, uint64_t& counter, const uint64_t barrier_period, uint64_t &failed_nodes_local, uint64_t& total_writes_local, const uint64_t my_id, const uint64_t print_period);

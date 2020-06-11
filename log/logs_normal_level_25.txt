@@ -1,0 +1,12 @@
+Enter Wmax, level                                                          
+1000000 25                                                                 
+                                                                           
+elapsed time is 4767.28                                                    
+total write is 591584316646                                                
+status:                                                                    
+memory size:         8191MB                                                
+level:               25                                                    
+nodes:               33554431                                              
+ideal total write : 33554431000000                                         
+level=25; percent lifetime :  0.0176306                                    
+pgs=0.0176306 
