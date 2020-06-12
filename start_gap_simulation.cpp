@@ -74,7 +74,7 @@ int main(int argc, char** argv) {
 			<< "threads refers to the number of threads you want to use to speed up computation\n"
 			<< "Barrier period refers to the number of ORAM requests synchronized. Increasing this number will speed up computation, but will also lose precision\n"
 			<< "Print period refers to the period you want to print out status. The actual print period is computed by barrier period * print period\n"
-			<< "Tree top levels refers to the number of levels that can be cached into a tree top cache. ";
+			<< "Tree top levels refers to the number of levels that can be cached into a tree top cache. \n";
 
 		return 1;
 	}	
