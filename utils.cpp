@@ -7,7 +7,7 @@ inline void leaf_range(const uint64_t level, uint64_t &from, uint64_t &to) {
 }
 
 // check whether the calling thread (specified by my_id) is responsible for logic address (la)
-inline int check_group(uint64_t& la,const uint64_t* map_table, const uint64_t nodes, const uint64_t groups, const uint64_t separate, const uint64_t total_threads, const uint64_t my_id, uint64_t tree_top_bound_lower, uint64_t tree_top_bound_upper) {
+inline int check_group(uint64_t& la, const uint64_t* map_table, const uint64_t nodes, const uint64_t groups, const uint64_t separate, const uint64_t total_threads, const uint64_t my_id, uint64_t tree_top_bound_lower, uint64_t tree_top_bound_upper) {
 	if (tree_top_bound_lower <= la && la <= tree_top_bound_upper) {
 		return 0;
 	}
@@ -217,7 +217,7 @@ void consume_path_oram_requests(config_t* config, uint64_t my_id) {
 			leaf_id = (leaf_id - 1) >> 1;
 			// then process the job
 			// if this ORAM request lies in this thread
-			if (check_group(leaf_id, map_table, nodes, groups, separate, total_threads, my_id, tree_top_bound_lower, tree_top_bound_upper) == 1) {
+			if (check_group(la, map_table, nodes, groups, separate, total_threads, my_id, tree_top_bound_lower, tree_top_bound_upper) == 1) {
 				uint64_t group_id = get_group_id(la, nodes, groups, separate);
 				group_id = compute_offset_group(group_id, groups, total_threads);
 				assert(group_id < groups_this_thread);

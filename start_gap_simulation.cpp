@@ -22,6 +22,7 @@ void shuffle_map_table(uint64_t* mt, const uint64_t size);
 const uint64_t z = 4;
 const uint64_t block_size = 64;
 const uint64_t period = 100;
+const std::string directory = "log/";
 std::vector<std::thread> consumer;
 /*
 void xxx(pthread_barrier_t* b, int id) {
@@ -148,12 +149,12 @@ int main(int argc, char** argv) {
 	//	config.thread_group_to	= thread_group_to;
 	//	config.groups_from	= groups_from;
 	//	config.groups_to	= groups_to;
-	std::string file_name("logs_level_");
-	file_name += level;
+	std::string file_name(directory + "logs_level_");
+	file_name += to_string(level);
 	file_name += "_group_";
-	file_name += groups;
+	file_name += to_string(groups);
 	file_name += "_treeTop_";
-	file_name += tree_top_level;
+	file_name += to_string(tree_top_level);
 	file_name += ".txt";
 	ofstream outputFile(file_name);
 	config.thread_barrier 	= &thread_barrier;
