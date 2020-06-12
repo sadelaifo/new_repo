@@ -7,7 +7,11 @@ inline void leaf_range(const uint64_t level, uint64_t &from, uint64_t &to) {
 }
 
 // check whether the calling thread (specified by my_id) is responsible for logic address (la)
-inline int check_group(const uint64_t la, const uint64_t nodes, const uint64_t groups, const uint64_t separate, const uint64_t total_threads, const uint64_t my_id) {
+inline int check_group(uint64_t& la, const uint64_t* map_table, const uint64_t nodes, const uint64_t groups, const uint64_t separate, const uint64_t total_threads, const uint64_t my_id, uint64_t tree_top_bound_lower, uint64_t tree_top_bound_upper) {
+	if (tree_top_bound_lower <= la && la <= tree_top_bound_upper) {
+		return 0;
+	}
+	la = map_table[la];
 	uint64_t group_id = get_group_id(la, nodes, groups, separate);
 	return (group_id / (groups / total_threads) == my_id);
 }
@@ -31,50 +35,50 @@ inline uint64_t compute_offset_group(const uint64_t group_id, const uint64_t gro
 }
 
 inline uint64_t my_random_generator(
-	std::default_random_engine& generator,
-	std::uniform_int_distribution<uint64_t>& d
-	) {
-//	return counter % (to - from + 1) + from;
-//	return (uint64_t) rand() % (to - from + 1) + from;
+		std::default_random_engine& generator,
+		std::uniform_int_distribution<uint64_t>& d
+		) {
+	//	return counter % (to - from + 1) + from;
+	//	return (uint64_t) rand() % (to - from + 1) + from;
 
 	return (uint64_t) d(generator);
 
-/*
-	sha256.add(&counter, sizeof(counter));
-	std::string s = sha256.getHash();
-	uint64_t num = 0;
-	for (uint64_t i = 0; i < sizeof(counter); i++) {
-		num += (uint64_t)(s[i] - '0') * (uint64_t)pow((double)100, (double)i);
-//		num += (uint64_t)(s[i] - '0') << 7 * i;
+	/*
+	   sha256.add(&counter, sizeof(counter));
+	   std::string s = sha256.getHash();
+	   uint64_t num = 0;
+	   for (uint64_t i = 0; i < sizeof(counter); i++) {
+	   num += (uint64_t)(s[i] - '0') * (uint64_t)pow((double)100, (double)i);
+	//		num += (uint64_t)(s[i] - '0') << 7 * i;
 	}
-*/
-//	return num % (to - from + 1) + from;
-//	return counter % (to - from + 1) + from;
+	 */
+	//	return num % (to - from + 1) + from;
+	//	return counter % (to - from + 1) + from;
 }
 
 inline void cleanup(uint64_t** pa, uint64_t* start, uint64_t* gap, uint64_t* group_counter, uint64_t* group_size, const uint64_t groups_per_thread) {
-//	delete[] start;
-//	delete[] gap;
-//	delete[] group_counter;
-//	delete[] group_size;
-//	for (uint64_t i = 0; i < groups_per_thread; i++) {
-//		delete[] pa[i];
-//	}
-//	delete[] pa;
+	//	delete[] start;
+	//	delete[] gap;
+	//	delete[] group_counter;
+	//	delete[] group_size;
+	//	for (uint64_t i = 0; i < groups_per_thread; i++) {
+	//		delete[] pa[i];
+	//	}
+	//	delete[] pa;
 	return;
 }
 
 inline int initialize_consumer_thread(
-	config_t* config, 
-	uint64_t** &pa, 
-	uint64_t* &map_table,
-	uint64_t* &start, 
-	uint64_t* &gap, 
-	uint64_t* &group_counter, 
-	uint64_t* &group_size, 
-	uint64_t  groups_this_thread,
-	uint64_t  total_threads,
-	uint64_t  my_id) {
+		config_t* config, 
+		uint64_t** &pa, 
+		uint64_t* &map_table,
+		uint64_t* &start, 
+		uint64_t* &gap, 
+		uint64_t* &group_counter, 
+		uint64_t* &group_size, 
+		uint64_t  groups_this_thread,
+		uint64_t  total_threads,
+		uint64_t  my_id) {
 
 	uint64_t from 	= my_id * groups_this_thread;	
 	uint64_t to	= (my_id + 1) * groups_this_thread - 1;
@@ -102,11 +106,11 @@ inline int initialize_consumer_thread(
 		}
 		gap[i] = group_size[i];
 		try {
-                        pa[i] = new uint64_t [gap[i]];
-                } catch (std::bad_alloc& ba) {
-                        std::cerr << "bad allocation caught" << ba.what() << std::endl;
-                        return 1;
-                }
+			pa[i] = new uint64_t [gap[i]];
+		} catch (std::bad_alloc& ba) {
+			std::cerr << "bad allocation caught" << ba.what() << std::endl;
+			return 1;
+		}
 
 		memset(pa[i], 0, sizeof(uint64_t) * gap[i]);
 	}
@@ -127,7 +131,7 @@ inline int consumer_thread_wait(config_t* config, const uint64_t thres, uint64_t
 		config->mutex.unlock();
 		config->thread_barrier->wait();
 
-//		pthread_barrier_wait(config->barrier);
+		//		pthread_barrier_wait(config->barrier);
 
 		if (config->failed_nodes >= thres) {
 			config->total_writes += total_writes_local;
@@ -141,19 +145,21 @@ inline int consumer_thread_wait(config_t* config, const uint64_t thres, uint64_t
 
 void consume_path_oram_requests(config_t* config, uint64_t my_id) {
 	auto init_time = std::chrono::system_clock::now();
-	
+
 	// declare local const variables
 	const uint64_t nodes		= config->nodes;
 	const uint64_t wmax		= config->wmax;
 	const uint64_t thres		= config->thres;
 	const uint64_t period 		= config->period;
 	const uint64_t groups		= config->groups;
-        const uint64_t barrier_period 	= config->barrier_period;
+	const uint64_t barrier_period 	= config->barrier_period;
 	const uint64_t level 		= config->level;
 	const uint64_t separate 	= config->separate;
 	const uint64_t total_threads 	= config->total_threads;
 	const uint64_t print_period	= config->print_period * barrier_period;
-//	SHA256 sha256;
+	const uint64_t tree_top_bound_lower = ((uint64_t) 1 << (config->tree_top_level_lower - 1)) - 1;
+	const uint64_t tree_top_bound_upper = ((uint64_t) 1 << (config->tree_top_level_upper)) - 2;
+	//	SHA256 sha256;
 
 	// declare local variables
 	uint64_t la 			= 0;
@@ -162,8 +168,8 @@ void consume_path_oram_requests(config_t* config, uint64_t my_id) {
 	uint64_t counter 		= 0;
 	uint64_t failed_nodes_local 	= 0;
 	uint64_t total_writes_local 	= 0;
-        uint64_t groups_this_thread 	= groups / total_threads;
-//	uint64_t flag			= config->flag;
+	uint64_t groups_this_thread 	= groups / total_threads;
+	//	uint64_t flag			= config->flag;
 	// declare local pointers
 	uint64_t **pa;
 	uint64_t *start;
@@ -190,8 +196,8 @@ void consume_path_oram_requests(config_t* config, uint64_t my_id) {
 		return;
 	}
 
-        std::default_random_engine generator;
-        std::uniform_int_distribution<uint64_t> d(from, to);
+	std::default_random_engine generator;
+	std::uniform_int_distribution<uint64_t> d(from, to);
 
 	std::chrono::duration<double> init_elapsed_time = std::chrono::system_clock::now() - init_time;
 
@@ -203,15 +209,15 @@ void consume_path_oram_requests(config_t* config, uint64_t my_id) {
 	while (1) {
 		// get a job from request queue
 		uint64_t leaf_id = my_random_generator(generator, d);
-//		counter++;
+		//		counter++;
 		for (uint64_t i = 0; i < level; i++) {
 			counter++;
 			//			la = transfer_matrix(leaf_id);
-			la = map_table[leaf_id];
+			la = leaf_id;
 			leaf_id = (leaf_id - 1) >> 1;
 			// then process the job
 			// if this ORAM request lies in this thread
-			if (check_group(la, nodes, groups, separate, total_threads, my_id) == 1) {
+			if (check_group(la, map_table, nodes, groups, separate, total_threads, my_id, tree_top_bound_lower, tree_top_bound_upper) == 1) {
 				uint64_t group_id = get_group_id(la, nodes, groups, separate);
 				group_id = compute_offset_group(group_id, groups, total_threads);
 				assert(group_id < groups_this_thread);
@@ -224,11 +230,11 @@ void consume_path_oram_requests(config_t* config, uint64_t my_id) {
 
 				(group_counter[group_id])++;
 				(pa[group_id][tmp_pa])++;
-//				if (flag == 1) {
-//					cout << "group_id = " << group_id << "; offset = " << tmp_pa << endl;
-//				}
+				//				if (flag == 1) {
+				//					cout << "group_id = " << group_id << "; offset = " << tmp_pa << endl;
+				//				}
 				if (pa[group_id][tmp_pa] >= wmax) {
-//					for (uint64_t j = 0; j < nodes
+					//					for (uint64_t j = 0; j < nodes
 					failed_nodes_local++;
 					pa[group_id][tmp_pa] = 0;
 				}

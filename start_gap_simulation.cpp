@@ -22,8 +22,9 @@ void shuffle_map_table(uint64_t* mt, const uint64_t size);
 const uint64_t z = 4;
 const uint64_t block_size = 64;
 const uint64_t period = 100;
+const std::string directory = "log/";
 std::vector<std::thread> consumer;
-
+/*
 void xxx(pthread_barrier_t* b, int id) {
 	int c = 0;
 	while (true) {
@@ -35,10 +36,10 @@ void xxx(pthread_barrier_t* b, int id) {
 	}
 	return;
 }
-
+*/
 int main(int argc, char** argv) {
 	//	srand((unsigned int) time(NULL));
-	srand((unsigned int) 100);
+	srand((unsigned int) time(NULL));
 	//	for (int i = 0; i < 1000; i++) {
 	//		cout << rand() % 1000 << endl;
 	//	}
@@ -65,14 +66,16 @@ int main(int argc, char** argv) {
 
 //	return 0;
 
-	if (argc < 7) {
-		std::cout << "ERROR, enter wmax, level, groups, threads, barrier period, print period\n" 
+	if (argc < 8) {
+		std::cout << "ERROR, enter wmax, level, groups, threads, barrier period, print period, tree top levels\n" 
 			<< "Wmax refers to the number of writes before a memory line dies\n"
 			<< "Level refers to the size of ORAM tree\n"
 			<< "Groups refers to the number of groups you want to simulate with start gap\n"
 			<< "threads refers to the number of threads you want to use to speed up computation\n"
 			<< "Barrier period refers to the number of ORAM requests synchronized. Increasing this number will speed up computation, but will also lose precision\n"
-			<< "Print period refers to the period you want to print out status. The actual print period is computed by barrier period * print period\n";
+			<< "Print period refers to the period you want to print out status. The actual print period is computed by barrier period * print period\n"
+			<< "Tree top levels refers to the number of levels that can be cached into a tree top cache. ";
+
 		return 1;
 	}	
 	const uint64_t wmax 		= (uint64_t)atoi(argv[1]);
@@ -81,14 +84,22 @@ int main(int argc, char** argv) {
 	const uint64_t num_threads 	= (uint64_t)atoi(argv[4]);
 	const uint64_t barrier_period   = (uint64_t)atoi(argv[5]);
 	const uint64_t print_period	= (uint64_t)atoi(argv[6]);
+	const uint64_t tree_top_level	= (uint64_t)atoi(argv[7]);
 	const uint64_t nodes 		= ((uint64_t) 1 << level) - 1;
 	const uint64_t size 		= nodes;
 	const uint64_t memory_size 	= (nodes + groups) * z * block_size;
 	const uint64_t thres 		= nodes / 100;
 	const uint64_t separate		= (nodes % groups) * (nodes / groups + 1) - 1;
+
+
 	//	const uint64_t group_size 	= (uint64_t) ceil((double)nodes / (double)groups);
 	if (groups % num_threads != 0 || groups < num_threads || groups > nodes) {
-		std::cout << "Error, please ensure groups % threads == 0, and groups < nodes\n";
+		std::cerr << "Error, please ensure groups % threads == 0, and groups < nodes\n";
+		return 1;
+	}
+
+	if (tree_top_level >= level) {
+		std::cerr << "Error, please ensure tree top cache < memory size\n";
 		return 1;
 	}
 	//	assert(barrier_period % level == 0);	
@@ -138,7 +149,14 @@ int main(int argc, char** argv) {
 	//	config.thread_group_to	= thread_group_to;
 	//	config.groups_from	= groups_from;
 	//	config.groups_to	= groups_to;
-	ofstream outputFile("log/logs.txt");
+	std::string file_name(directory + "logs_level_");
+	file_name += to_string(level);
+	file_name += "_group_";
+	file_name += to_string(groups);
+	file_name += "_treeTop_";
+	file_name += to_string(tree_top_level);
+	file_name += ".txt";
+	ofstream outputFile(file_name);
 	config.thread_barrier 	= &thread_barrier;
 	config.nodes 		= nodes;
 	config.groups 		= groups;
@@ -156,6 +174,8 @@ int main(int argc, char** argv) {
 	//	config.blocking_threads = 0;
 	config.separate		= separate;
 	config.barrier		= (pthread_barrier_t*)malloc(sizeof(pthread_barrier_t));
+	config.tree_top_level_upper = tree_top_level;
+	config.tree_top_level_lower = 0;
 	pthread_barrier_init(config.barrier, NULL, (unsigned)num_threads);
 
 	//	config.time		= time;
