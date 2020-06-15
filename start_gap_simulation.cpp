@@ -39,7 +39,7 @@ void xxx(pthread_barrier_t* b, int id) {
 */
 int main(int argc, char** argv) {
 	//	srand((unsigned int) time(NULL));
-	srand((unsigned int) time(NULL));
+	srand((unsigned int) 0);
 	//	for (int i = 0; i < 1000; i++) {
 	//		cout << rand() % 1000 << endl;
 	//	}
