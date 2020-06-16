@@ -84,13 +84,16 @@ int main(int argc, char** argv) {
 	const uint64_t num_threads 	= (uint64_t)atoi(argv[4]);
 	const uint64_t barrier_period   = (uint64_t)atoi(argv[5]);
 	const uint64_t print_period	= (uint64_t)atoi(argv[6]);
-	const uint64_t tree_top_level	= (uint64_t)atoi(argv[7]);
+	const int      tree_top_level	= (int)     atoi(argv[7]);
 	const uint64_t nodes 		= ((uint64_t) 1 << level) - 1;
 	const uint64_t size 		= nodes;
 	const uint64_t memory_size 	= (nodes + groups) * z * block_size;
 	const uint64_t thres 		= nodes / 100;
 	const uint64_t separate		= (nodes % groups) * (nodes / groups + 1) - 1;
-
+	int            cache_level_upper = -1;
+	if (argc == 9) {
+		cache_level_upper = (int)atoi(argv[8]);
+	}	
 
 	//	const uint64_t group_size 	= (uint64_t) ceil((double)nodes / (double)groups);
 	if (groups % num_threads != 0 || groups < num_threads || groups > nodes) {
@@ -98,7 +101,7 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 
-	if (tree_top_level >= level) {
+	if (tree_top_level >= (int) level) {
 		std::cerr << "Error, please ensure tree top cache < memory size\n";
 		return 1;
 	}
@@ -153,8 +156,15 @@ int main(int argc, char** argv) {
 	file_name += to_string(level);
 	file_name += "_group_";
 	file_name += to_string(groups);
+
+	if (cache_level_upper == -1) {
 	file_name += "_treeTop_";
 	file_name += to_string(tree_top_level);
+	} else {
+		file_name += "_forkPathCache_";
+		file_name += to_string(cache_level_upper);
+	}
+
 	file_name += ".txt";
 	ofstream outputFile(file_name);
 	config.thread_barrier 	= &thread_barrier;
@@ -176,6 +186,9 @@ int main(int argc, char** argv) {
 	config.barrier		= (pthread_barrier_t*)malloc(sizeof(pthread_barrier_t));
 	config.tree_top_level_upper = tree_top_level;
 	config.tree_top_level_lower = 0;
+	config.cache_level_upper = cache_level_upper;
+	config.cache_level_lower = 7;
+	config.fork_path_enable  = (cache_level_upper == -1) ? 0 : 1;
 	pthread_barrier_init(config.barrier, NULL, (unsigned)num_threads);
 
 	//	config.time		= time;

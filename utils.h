@@ -40,8 +40,11 @@ struct config_t {
 	uint64_t  barrier_period;
 	uint64_t  separate;
 	uint64_t  print_period;
-	uint64_t tree_top_level_upper;
-	uint64_t tree_top_level_lower;
+	int 	  tree_top_level_upper;
+	int 	  tree_top_level_lower;
+        int       cache_level_upper;
+        int       cache_level_lower;
+	int	  fork_path_enable;
 //	std::chrono::duration<double>* time;
 /* shared variables */
 

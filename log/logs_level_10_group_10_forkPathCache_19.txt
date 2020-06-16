@@ -1,0 +1,7 @@
+elapsed time is 0.606192
+total write is 8907600
+memory size:        0MB
+level:              10
+nodes:              1023
+ideal total write : 10230000
+wmax=10000; level=10; group=10 percent lifetime :  0.862304

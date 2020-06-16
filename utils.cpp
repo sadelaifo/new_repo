@@ -157,8 +157,13 @@ void consume_path_oram_requests(config_t* config, uint64_t my_id) {
 	const uint64_t separate 	= config->separate;
 	const uint64_t total_threads 	= config->total_threads;
 	const uint64_t print_period	= config->print_period * barrier_period;
-	const uint64_t tree_top_bound_lower = ((uint64_t) 1 << (config->tree_top_level_lower - 1)) - 1;
-	const uint64_t tree_top_bound_upper = ((uint64_t) 1 << (config->tree_top_level_upper)) - 2;
+	const uint64_t tree_top_bound_lower = (config->fork_path_enable == 1) ? 0		      : ((uint64_t) 1 << (config->tree_top_level_lower - 1)) - 1;
+	const uint64_t tree_top_bound_upper = (config->fork_path_enable == 1) ? ((uint64_t) 1 << 7) - 2 : ((uint64_t) 1 << (config->tree_top_level_upper)) - 2;
+
+	const int	cache_level_upper = config->cache_level_upper;
+	const int	cache_level_lower = config->cache_level_lower;	
+
+
 	//	SHA256 sha256;
 
 	// declare local variables
@@ -210,14 +215,19 @@ void consume_path_oram_requests(config_t* config, uint64_t my_id) {
 		// get a job from request queue
 		uint64_t leaf_id = my_random_generator(generator, d);
 		//		counter++;
-		for (uint64_t i = 0; i < level; i++) {
+		for (int i = 0; i < (int)level; i++) {
 			counter++;
 			//			la = transfer_matrix(leaf_id);
 			la = leaf_id;
 			leaf_id = (leaf_id - 1) >> 1;
-			// then process the job
-			// if this ORAM request lies in this thread
+			if (i <= cache_level_upper && i >= cache_level_lower) {
+				uint64_t cache_from = (uint64_t) (1 << (uint64_t)(i - 1)) - 1;
+				if (la <= ((uint64_t) 1 << (uint64_t) (i - 6)) + cache_from) {
+					goto wait_consumer;
+				}
+			} 
 			if (check_group(la, map_table, nodes, groups, separate, total_threads, my_id, tree_top_bound_lower, tree_top_bound_upper) == 1) {
+				// then process the job. if this ORAM request lies in this thread
 				uint64_t group_id = get_group_id(la, nodes, groups, separate);
 				group_id = compute_offset_group(group_id, groups, total_threads);
 				assert(group_id < groups_this_thread);
@@ -248,6 +258,7 @@ void consume_path_oram_requests(config_t* config, uint64_t my_id) {
 				total_writes_local++;
 			}
 
+wait_consumer:
 			if (consumer_thread_wait(config, thres, counter, barrier_period, failed_nodes_local, total_writes_local, my_id, print_period) == 1) {
 				cleanup(pa, start, gap, group_counter, group_size, groups_this_thread);
 				return;
