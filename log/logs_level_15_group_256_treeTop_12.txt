@@ -1,0 +1,16 @@
+Thread id = 0; Counter = 1000000000; Total writes in this thread is 48806980; Failed nodes total is 0
+Thread id = 1; Counter = 1000000000; Total writes in this thread is 51481479; Failed nodes total is 0
+Thread id = 3; Counter = 1000000000; Total writes in this thread is 48452485; Failed nodes total is 0
+Thread id = 2; Counter = 1000000000; Total writes in this thread is 51259057; Failed nodes total is 0
+Thread id = 2; Counter = 2000000000; Total writes in this thread is 102509836; Failed nodes total is 0
+Thread id = 0; Counter = 2000000000; Total writes in this thread is 97609779; Failed nodes total is 0
+Thread id = 3; Counter = 2000000000; Total writes in this thread is 96916559; Failed nodes total is 0
+Thread id = 1; Counter = 2000000000; Total writes in this thread is 102963828; Failed nodes total is 0
+Thread id = 2; Counter = 3000000000; Total writes in this thread is 153765248; Failed nodes total is 0
+Thread id = 3; Counter = 3000000000; Total writes in this thread is 145366577; Failed nodes total is 0
+Thread id = 1; Counter = 3000000000; Total writes in this thread is 154439872; Failed nodes total is 0
+Thread id = 0; Counter = 3000000000; Total writes in this thread is 146428303; Failed nodes total is 0
+Thread id = 1; Counter = 4000000000; Total writes in this thread is 205908301; Failed nodes total is 0
+Thread id = 0; Counter = 4000000000; Total writes in this thread is 195224741; Failed nodes total is 0
+Thread id = 2; Counter = 4000000000; Total writes in this thread is 205032780; Failed nodes total is 0
+Thread id = 3; Counter = 4000000000; Total writes in this thread is 193834179; Failed nodes total is 0

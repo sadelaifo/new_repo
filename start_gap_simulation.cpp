@@ -39,7 +39,7 @@ void xxx(pthread_barrier_t* b, int id) {
 */
 int main(int argc, char** argv) {
 	//	srand((unsigned int) time(NULL));
-	srand((unsigned int) 0);
+	srand((unsigned int) 10);
 	//	for (int i = 0; i < 1000; i++) {
 	//		cout << rand() % 1000 << endl;
 	//	}
@@ -74,7 +74,7 @@ int main(int argc, char** argv) {
 			<< "threads refers to the number of threads you want to use to speed up computation\n"
 			<< "Barrier period refers to the number of ORAM requests synchronized. Increasing this number will speed up computation, but will also lose precision\n"
 			<< "Print period refers to the period you want to print out status. The actual print period is computed by barrier period * print period\n"
-			<< "Tree top levels refers to the number of levels that can be cached into a tree top cache. \n";
+			<< "Tree top levels refers to the number of levels that can be cached into a tree top cache. Enter 0 to this field if you do not want to use a tree top cache\n";
 
 		return 1;
 	}	
@@ -158,8 +158,8 @@ int main(int argc, char** argv) {
 	file_name += to_string(groups);
 
 	if (cache_level_upper == -1) {
-	file_name += "_treeTop_";
-	file_name += to_string(tree_top_level);
+		file_name += "_treeTop_";
+		file_name += to_string(tree_top_level);
 	} else {
 		file_name += "_forkPathCache_";
 		file_name += to_string(cache_level_upper);
@@ -179,15 +179,17 @@ int main(int argc, char** argv) {
 	config.failed_nodes 	= 0;
 	config.barrier_period   = barrier_period;
 	config.total_writes 	= 0;
+	config.total_tree_top_writes = 0;
 	config.outputFile	= &outputFile;
 	config.print_period	= print_period;
 	//	config.blocking_threads = 0;
 	config.separate		= separate;
 	config.barrier		= (pthread_barrier_t*)malloc(sizeof(pthread_barrier_t));
-	config.tree_top_level_upper = tree_top_level;
+	config.tree_top_level_upper = tree_top_level;	// for tree top cache
 	config.tree_top_level_lower = 0;
-	config.cache_level_upper = cache_level_upper;
-	config.cache_level_lower = 7;
+	config.cache_level_upper = cache_level_upper;	// this is for mac 
+	config.cache_level_lower = 8;
+	config.total_mac_writes = 0;
 	config.fork_path_enable  = (cache_level_upper == -1) ? 0 : 1;
 	pthread_barrier_init(config.barrier, NULL, (unsigned)num_threads);
 
@@ -224,7 +226,9 @@ int main(int argc, char** argv) {
 	//		std::cout << "elapsed time for thread " << i << " is: " << config.time[i].count() << std::endl;
 	//	}
 	std::cout << "*******************************************\n";
-	std::cout << "total write is " << c << std::endl;
+	std::cout << "total write PM is 	" << c << std::endl;
+	std::cout << "total write tree top is 	" << config.total_tree_top_writes << std::endl;
+	std::cout << "total write mac is 	" << config.total_mac_writes << std::endl;
 	std::cout << "memory size:        " << (memory_size >> 20) << "MB" << std::endl;
 	std::cout << "level:              " << level << std::endl;
 	std::cout << "nodes:              " << nodes << std::endl;
@@ -240,7 +244,9 @@ int main(int argc, char** argv) {
 		//		for (uint64_t i = 0; i < num_threads; i++) {
 		//			outputFile << "elapsed time for thread " << i << " is: " << config.time[i].count() << std::endl;
 		//		}
-		outputFile << "total write is " << c << std::endl;
+		outputFile << "total write PM is " << c << std::endl;
+		outputFile << "total write tree top is " << config.total_tree_top_writes << std::endl;
+		outputFile << "total write mac is        " << config.total_mac_writes << std::endl;
 		outputFile << "memory size:        " << (memory_size >> 20) << "MB" << std::endl;
 		outputFile << "level:              " << level << std::endl;
 		outputFile << "nodes:              " << nodes << std::endl;

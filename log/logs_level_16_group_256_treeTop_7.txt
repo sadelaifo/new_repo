@@ -1,0 +1,17 @@
+Thread id = 2; Counter = 100000000; Total writes in this thread is 22583043; Failed nodes total is 0
+Thread id = 1; Counter = 100000000; Total writes in this thread is 26310937; Failed nodes total is 0
+Thread id = 3; Counter = 100000000; Total writes in this thread is 22627147; Failed nodes total is 0
+Thread id = 0; Counter = 100000000; Total writes in this thread is 28478873; Failed nodes total is 0
+Thread id = 2; Counter = 200000000; Total writes in this thread is 45168978; Failed nodes total is 201
+Thread id = 1; Counter = 200000000; Total writes in this thread is 52621561; Failed nodes total is 201
+Thread id = 3; Counter = 200000000; Total writes in this thread is 45265983; Failed nodes total is 201
+Thread id = 0; Counter = 200000000; Total writes in this thread is 56943478; Failed nodes total is 201
+elapsed time is 17.2618
+total write PM is 249720000
+total write tree top is 194226669
+total write mac is        0
+memory size:        16MB
+level:              16
+nodes:              65535
+ideal total write : 655350000
+wmax=10000; level=16; group=256 percent lifetime :  0.379566

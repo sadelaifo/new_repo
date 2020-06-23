@@ -53,6 +53,8 @@ struct config_t {
 //	uint64_t* group_writes;
 	boost::barrier* thread_barrier;
 	atomic<uint64_t> total_writes;
+	atomic<uint64_t> total_tree_top_writes;
+	atomic<uint64_t> total_mac_writes;
 	uint64_t failed_nodes;
 //	uint64_t blocking_threads;	
 //	std::condition_variable_any cv;
@@ -67,8 +69,7 @@ inline void leaf_range(uint64_t level, uint64_t &from, uint64_t &to);
 inline int check_group(uint64_t& la, const uint64_t nodes, const uint64_t groups, const uint64_t separate, const uint64_t total_threads, const uint64_t my_id, uint64_t tree_top_bound_lower, uint64_t tree_top_bound_upper);
 inline uint64_t get_group_id(const uint64_t la, const uint64_t nodes, const uint64_t groups, const uint64_t separate);
 inline uint64_t my_random_generator(std::default_random_engine& g, std::uniform_int_distribution<uint64_t>& d);
-inline int consumer_thread_wait(config_t* config, const uint64_t thres, uint64_t& counter, const uint64_t barrier_period, uint64_t &failed_nodes_local, uint64_t& total_writes_local, const uint64_t my_id, const uint64_t print_period);
-inline uint64_t compute_offset_la(const uint64_t la, const uint64_t nodes,const uint64_t groups,const uint64_t separate);
+inline int consumer_thread_wait(config_t* config, const uint64_t thres, uint64_t& counter, const uint64_t barrier_period, uint64_t &failed_nodes_local, uint64_t& total_writes_local, uint64_t& total_tree_top_writes_local, uint64_t& total_mac_writes_local, const uint64_t my_id, const uint64_t print_period);
 inline int initialize_consumer_thread(
         config_t* config,
         uint64_t** &pa,

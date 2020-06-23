@@ -8,9 +8,9 @@ inline void leaf_range(const uint64_t level, uint64_t &from, uint64_t &to) {
 
 // check whether the calling thread (specified by my_id) is responsible for logic address (la)
 inline int check_group(uint64_t& la, const uint64_t* map_table, const uint64_t nodes, const uint64_t groups, const uint64_t separate, const uint64_t total_threads, const uint64_t my_id, uint64_t tree_top_bound_lower, uint64_t tree_top_bound_upper) {
-	if (tree_top_bound_lower <= la && la <= tree_top_bound_upper) {
-		return 0;
-	}
+//	if (tree_top_bound_lower <= la && la <= tree_top_bound_upper) {
+//		return -1;
+//	}
 	la = map_table[la];
 	uint64_t group_id = get_group_id(la, nodes, groups, separate);
 	return (group_id / (groups / total_threads) == my_id);
@@ -120,7 +120,7 @@ inline int initialize_consumer_thread(
 // synchronize the calling thread with all other threads,
 // return 1 if the total number of failed nodes > 1%
 // return 0 otherwise
-inline int consumer_thread_wait(config_t* config, const uint64_t thres, uint64_t& counter, const uint64_t barrier_period, uint64_t &failed_nodes_local, uint64_t& total_writes_local, const uint64_t my_id, const uint64_t print_period) {
+inline int consumer_thread_wait(config_t* config, const uint64_t thres, uint64_t& counter, const uint64_t barrier_period, uint64_t &failed_nodes_local, uint64_t& total_writes_local, uint64_t& total_tree_top_writes_local, uint64_t& total_mac_writes_local, const uint64_t my_id, const uint64_t print_period) {
 	if (counter % barrier_period == 0) {
 		config->mutex.lock();
 		if (counter % print_period == 0) {
@@ -135,6 +135,8 @@ inline int consumer_thread_wait(config_t* config, const uint64_t thres, uint64_t
 
 		if (config->failed_nodes >= thres) {
 			config->total_writes += total_writes_local;
+			config->total_tree_top_writes = total_tree_top_writes_local;
+			config->total_mac_writes = total_mac_writes_local;
 			// config->time[my_id] = std::chrono::system_clock::now() - start_time;
 			return 1;
 		}
@@ -157,12 +159,13 @@ void consume_path_oram_requests(config_t* config, uint64_t my_id) {
 	const uint64_t separate 	= config->separate;
 	const uint64_t total_threads 	= config->total_threads;
 	const uint64_t print_period	= config->print_period * barrier_period;
-	const uint64_t tree_top_bound_lower = (config->fork_path_enable == 1) ? 0		      : ((uint64_t) 1 << (config->tree_top_level_lower - 1)) - 1;
+	const uint64_t tree_top_bound_lower = (config->fork_path_enable == 0) ? 0		      : ((uint64_t) 1 << (config->tree_top_level_lower - 1)) - 1;
 	const uint64_t tree_top_bound_upper = (config->fork_path_enable == 1) ? ((uint64_t) 1 << 7) - 2 : ((uint64_t) 1 << (config->tree_top_level_upper)) - 2;
 
-	const int	cache_level_upper = config->cache_level_upper;
-	const int	cache_level_lower = config->cache_level_lower;	
+	const int	tree_top_level = (config->fork_path_enable == 0) ? config->tree_top_level_upper : 7;
 
+	const int	cache_level_upper = config->cache_level_upper;
+	const int	cache_level_lower = config->cache_level_lower;
 
 	//	SHA256 sha256;
 
@@ -173,6 +176,8 @@ void consume_path_oram_requests(config_t* config, uint64_t my_id) {
 	uint64_t counter 		= 0;
 	uint64_t failed_nodes_local 	= 0;
 	uint64_t total_writes_local 	= 0;
+	uint64_t total_tree_top_writes_local = 0;
+	uint64_t total_mac_writes_local = 0;
 	uint64_t groups_this_thread 	= groups / total_threads;
 	//	uint64_t flag			= config->flag;
 	// declare local pointers
@@ -209,13 +214,14 @@ void consume_path_oram_requests(config_t* config, uint64_t my_id) {
 	// finish init
 	std::cout << "Thread " << my_id << " has finished init within " << init_elapsed_time.count() << "seconds\n";
 
-
+	int is_in_this_group = 0;
 	// start simulation
 	while (1) {
 		// get a job from request queue
 		uint64_t leaf_id = my_random_generator(generator, d);
 		//		counter++;
-		for (int i = 0; i < (int)level; i++) {
+		total_tree_top_writes_local += (uint64_t) tree_top_level;
+		for (int i = (int) level; i > tree_top_level; i--) {
 			counter++;
 			//			la = transfer_matrix(leaf_id);
 			la = leaf_id;
@@ -223,20 +229,25 @@ void consume_path_oram_requests(config_t* config, uint64_t my_id) {
 			if (i <= cache_level_upper && i >= cache_level_lower) {
 				uint64_t cache_from = (uint64_t) (1 << (uint64_t)(i - 1)) - 1;
 				if (la <= ((uint64_t) 1 << (uint64_t) (i - 6)) + cache_from) {
+					total_mac_writes_local++;
 					goto wait_consumer;
 				}
 			} 
-			if (check_group(la, map_table, nodes, groups, separate, total_threads, my_id, tree_top_bound_lower, tree_top_bound_upper) == 1) {
+			is_in_this_group = check_group(la, map_table, nodes, groups, separate, total_threads, my_id, tree_top_bound_lower, tree_top_bound_upper);
+//			if (is_in_this_group == -1) {
+//				total_tree_top_writes_local++;
+//			}else if (is_in_this_group == 1) {
+			if (is_in_this_group == 1) {
 				// then process the job. if this ORAM request lies in this thread
 				uint64_t group_id = get_group_id(la, nodes, groups, separate);
 				group_id = compute_offset_group(group_id, groups, total_threads);
-				assert(group_id < groups_this_thread);
+//				assert(group_id < groups_this_thread);		// this is used for debugging
 				// perform start-gap logic
 				la = compute_offset_la(la, nodes, groups, separate);
 				uint64_t tmp_pa = (la + start[group_id]) % group_size[group_id];
 				tmp_pa = tmp_pa < gap[group_id] ? tmp_pa : tmp_pa + 1;
 
-				assert(tmp_pa < group_size[group_id] + 1);
+//				assert(tmp_pa < group_size[group_id] + 1);   // this is used for debugging
 
 				(group_counter[group_id])++;
 				(pa[group_id][tmp_pa])++;
@@ -259,7 +270,7 @@ void consume_path_oram_requests(config_t* config, uint64_t my_id) {
 			}
 
 wait_consumer:
-			if (consumer_thread_wait(config, thres, counter, barrier_period, failed_nodes_local, total_writes_local, my_id, print_period) == 1) {
+			if (consumer_thread_wait(config, thres, counter, barrier_period, failed_nodes_local, total_writes_local, total_tree_top_writes_local, total_mac_writes_local, my_id, print_period) == 1) {
 				cleanup(pa, start, gap, group_counter, group_size, groups_this_thread);
 				return;
 			}

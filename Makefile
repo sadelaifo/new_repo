@@ -20,6 +20,7 @@ CFLAGS += -MMD -MP # dependency tracking flags
 CFLAGS += -I./
 CFLAGS += -Wall 
 CFLAGS += -std=c++11
+CFLAGS += -fpermissive
 #CFLAGS += -Werror 
 CFLAGS += -Wconversion
 CFLAGS += -Wmaybe-uninitialized
